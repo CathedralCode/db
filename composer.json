@@ -1,0 +1,49 @@
+{
+	"name": "cathedral/db",
+	"description": "Database Layer database interfaces and classes",
+	"type": "library",
+	"keywords": [
+		"inane",
+		"cathedral",
+        "laminas",
+		"db"
+	],
+	"homepage": "https://git.inane.co.za:3000/Cathedral/data",
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packer.inane.co.za",
+            "name": "Inane Packer"
+        }
+    ],
+	"authors": [
+		{
+			"name": "Philip Michael Raab",
+			"email": "peep@inane.co.za",
+			"homepage": "https://inane.co.za",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"email": "peep@inane.co.za",
+		"wiki": "https://git.inane.co.za:3000/Cathedral/data/wiki",
+		"issues": "https://git.inane.co.za:3000/Cathedral/data/issues"
+	},
+	"require": {
+		"php": ">=7.2",
+		"laminas/laminas-paginator": "^2.8",
+		"laminas/laminas-db": "^2.11",
+        "laminas/laminas-hydrator": "^1.1 || ^2.1 || ^3.0",
+        "inanepain/inane": ">=0.20.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Cathedral\\Db\\": "src/"
+		}
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"sort-packages": true
+	}
+}
