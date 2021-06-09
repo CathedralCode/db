@@ -56,7 +56,7 @@ class Code extends Enum {
 	protected static $descriptions = [
 		'100' => 'Success',
 		'200' => 'Unknown error',
-		'210' => 'Identity requiered to access data',
+		'210' => 'Identity required to access data',
 		'300' => 'Unknown table error',
 		'301' => 'Table invalid',
 		'320' => 'Unknown record error',

@@ -195,7 +195,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     }
 
     /**
-     * Loops through resultset passing each result to get proccessed
+     * Loops through resultset passing each result to get processed
      *
      * @param mixed $data
      * @return array
@@ -491,7 +491,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * {@inheritdoc}
      *
      * @param mixed $data
-     *          replacment data
+     *          replacement data
      * @see \Laminas\Mvc\Controller\AbstractRestfulController::replaceList()
      */
     public function replaceList($data) {
