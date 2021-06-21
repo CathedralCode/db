@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Restful Abstract
  * 
@@ -8,6 +7,7 @@
  * @package Cathedral\Db
  * @author Philip Michael Raab <philip@inane.co.za>
  */
+declare(strict_types=1);
 
 namespace Cathedral\Db\Controller;
 
@@ -408,6 +408,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
         $e = $this->getEntity();
+        $id = is_numeric($id) ? (int) $id : $id;
+
         try {
             if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_GET()->getDescription());
         } catch (\Throwable $th) {

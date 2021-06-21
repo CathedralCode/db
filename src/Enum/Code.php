@@ -5,6 +5,7 @@
  * @package DBLayer
  * @author philip<philipr@digitalcabinet.co.za>
  */
+declare(strict_types=1);
 
 namespace Cathedral\Db\Enum;
 
