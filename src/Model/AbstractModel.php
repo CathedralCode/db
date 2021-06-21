@@ -4,6 +4,8 @@
  * 
  * PHP version 7
  */
+declare(strict_types=1);
+
 namespace Cathedral\Db\Model;
 
 use Laminas\Db\TableGateway\Feature\EventFeatureEventsInterface;

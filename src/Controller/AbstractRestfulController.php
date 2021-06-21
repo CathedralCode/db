@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Restful Abstract
  * 
@@ -8,6 +7,7 @@
  * @package Cathedral\Db
  * @author Philip Michael Raab <philip@inane.co.za>
  */
+declare(strict_types=1);
 
 namespace Cathedral\Db\Controller;
 
@@ -195,7 +195,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     }
 
     /**
-     * Loops through resultset passing each result to get proccessed
+     * Loops through resultset passing each result to get processed
      *
      * @param mixed $data
      * @return array
@@ -408,6 +408,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
         $e = $this->getEntity();
+        $id = is_numeric($id) ? (int) $id : $id;
+
         try {
             if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_GET()->getDescription());
         } catch (\Throwable $th) {
@@ -491,7 +493,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * {@inheritdoc}
      *
      * @param mixed $data
-     *          replacment data
+     *          replacement data
      * @see \Laminas\Mvc\Controller\AbstractRestfulController::replaceList()
      */
     public function replaceList($data) {
