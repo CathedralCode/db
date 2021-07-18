@@ -42,7 +42,7 @@ use function ucfirst;
 /**
  * Restful Abstract
  *
- * @version 0.2.0
+ * @version 0.3.0
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
@@ -317,6 +317,17 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     }
 
     /**
+     * Check if id is numeric and convert if it i
+     *
+     * @param $id
+     * 
+     * @return array
+     */
+    protected function checkId(mixed $id): mixed {
+        return $id = is_numeric($id) ? (int) $id : $id;
+    }
+
+    /**
      * Create a new resource
      *
      * @param mixed $data
@@ -373,6 +384,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $userId = $this->identity() ? $this->identity()->getId() : 0;
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
+        $id = $this->checkId($id);
+
         $e = $this->getEntity();
         if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_DELETE()->getDescription());
 
@@ -408,7 +421,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
         $e = $this->getEntity();
-        $id = is_numeric($id) ? (int) $id : $id;
+        $id = $this->checkId($id);
 
         try {
             if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_GET()->getDescription());
@@ -541,6 +554,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $userId = $this->identity() ? $this->identity()->getId() : 0;
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
+        $id = $this->checkId($id);
+
         $e = $this->getEntity();
         // if (!$e->get($id)) {
         //     return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_UPDATE()->getDescription());
@@ -589,6 +604,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $userId = $this->identity() ? $this->identity()->getId() : 0;
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
+
+        $id = $this->checkId($id);
 
         $e = $this->getEntity();
         if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_PATCH()->getDescription());
