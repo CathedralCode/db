@@ -567,7 +567,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         array_walk($data, function ($item, $key, &$entity) {
             if (array_key_exists($key, $this->_processFields) && $this->_processFields[$key] == self::CONTENT_TYPE_JSON && is_string($item)) {
                 if ($item == '') $item = null;
-                else $item = JSON::encode($item);
+                else $item = JSON::decode($item);
             }
             $entity->$key = $item;
         }, $e);

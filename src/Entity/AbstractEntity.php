@@ -8,10 +8,12 @@ declare(strict_types=1);
 
 namespace Cathedral\Db\Entity;
 
+use Laminas\Db\RowGateway\AbstractRowGateway;
+
 /**
  * AbstractEntity
  * @version 1.0.0
  */
-class AbstractEntity {
+class AbstractEntity extends AbstractRowGateway {
 
 }
