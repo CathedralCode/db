@@ -56,7 +56,7 @@ class Code extends Enum {
 	/**
 	 * @var string[] the descriptions
 	 */
-	protected static $descriptions = [
+	protected static array $descriptions = [
 		'100' => 'Success',
 		'200' => 'Unknown error',
 		'210' => 'Identity required to access data',
