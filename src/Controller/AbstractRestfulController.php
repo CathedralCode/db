@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Restful Abstract
  * 
@@ -7,6 +8,7 @@
  * @package Cathedral\Db
  * @author Philip Michael Raab <philip@inane.co.za>
  */
+
 declare(strict_types=1);
 
 namespace Cathedral\Db\Controller;
@@ -44,8 +46,12 @@ use function ucfirst;
 
 /**
  * Restful Abstract
+ * 
+ * CUSTOM METHODS
+ * customQueryOptions
+ * customResponseOptions
  *
- * @version 0.4.0
+ * @version 0.5.0
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
@@ -139,7 +145,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var mixed datatable
      */
-    protected $_datatable = null;
+    protected $_dataTable = null;
 
     /**
      *
@@ -175,6 +181,23 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      */
     protected function bundleArguments($params) {
         return count($params) == 1 ? array_combine([(is_array($params[0]) ? 'data' : 'id')], $params) : array_combine(['id', 'data'], $params);
+    }
+
+    /**
+     * Checks and runs methods that modify the data
+     * 
+     * Used in:
+     * createResponse
+     * getList
+     * 
+     * @since 0.5.0
+     *
+     * @param string $method
+     * @param array $arguments
+     * @return void
+     */
+    protected function callCustomProcess(string $method, array $arguments): void {
+        if (method_exists($this, $method)) $this->{$method}(...$arguments);
     }
 
     /**
@@ -222,6 +245,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'code' => $code->getValue(),
             'message' => $code->getDescription() . $extra_message
         ]);
+
+        $this->callCustomProcess('customResponseOptions', ['json' => $json]);
 
         return $json;
     }
@@ -330,8 +355,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         if (array_key_exists('state', $params) && $params['state'] !== null) $options['state'][] = (int) $params['state'];
 
-        if (method_exists($this, 'customQueryOptions'))
-        $this->customQueryOptions($options, $params);
+        $this->callCustomProcess('customQueryOptions', ['options' => $options, 'params' => $params]);
         return $options;
     }
 
@@ -387,7 +411,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
         $this->setFieldValue($data, 'fk_users', $userSession);
-        
+
         $response = $this->preCreate($data);
         if (!is_null($response)) return $this->createResponse($data, Code::USER_TASK_ABORT(), Code::TASK_API_CREATE()->getDescription(), ['abort message' => $response]);
 
@@ -479,6 +503,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         }
 
         // $this->postGetList();
+        $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
 
         $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
         return $this->createResponse($this->processElementList($resultList), Code::SUCCESS(), null, ['options' => $where]);
@@ -503,7 +528,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->exchangeArray($data);
         $e->save();
-        
+
         $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($data, Code::SUCCESS());
     }
@@ -603,12 +628,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return mixed
      */
     protected function getDataTable() {
-        if (!$this->_datatable) {
+        if (!$this->_dataTable) {
             $class = $this->getClass();
-            $this->_datatable = new $class();
+            $this->_dataTable = new $class();
         }
 
-        return $this->_datatable;
+        return $this->_dataTable;
     }
 
     /**
