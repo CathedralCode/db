@@ -47,11 +47,12 @@ use function ucfirst;
 /**
  * Restful Abstract
  * 
- * CUSTOM METHODS
- * customQueryOptions
- * customResponseOptions
- *
  * @version 0.5.0
+ * 
+ * @method void customQueryOptions(&$options, $params)
+ * @method void customResponseOptions(&$json)
+ * @method void getListPost($data)
+ * @method void createPre(&$data)
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
@@ -568,7 +569,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return mixed
      */
     public function update($id, $data) {
-        // \Inane\Debug\Logger::dump($this->getDataTable()->isSequence, 'this->getDataTable()->isSequence', true);
         $action = 'update';
         $this->log()->debug($action, []);
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_UPDATE()->getDescription());
