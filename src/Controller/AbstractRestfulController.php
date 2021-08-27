@@ -98,33 +98,58 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Methods to adjust values
+     * Add them to your tables rest controller to pre & post tweak data
      */
 
     /**
-     * OVERRIDE: Update Options with custom values
+     * Gets the query string parameters for pagination
      * 
-     * $options['where'] = [] - each entry extends the where clause
+     * @param array $options 
+     * @param array $params 
      * 
-     * @param array $options update with valid options
-     * @param array $params query parameters
-     * 
-     * @return void
+     * @return void 
      */
-    public function customQueryOptions(&$options, $params): void {
-    }
+    // public function customQueryOptions(&$options, $params): void {
+    //     if (isset($params['query_key'])) $options['where']['field'] = intval($params['query_key']);
+    // }
 
     /**
-     * OVERRIDE: Modify data before creating record
+     * Gets the query string parameters for pagination
      * 
-     * To halt creation return false
-     *
-     * @param array $data
-     * 
-     * @return null|string if string returned creation aborted and string used for error message
+     * @param mixed $json 
+     * @return void 
      */
-    protected function preCreate(array &$data): ?string {
-        return null;
-    }
+    // public function customResponseOptions(&$json): void {
+    //     /** @var JsonModel $json */
+    //     $payload = $json->getVariable('payload');
+
+    //     for ($i = 0; $i < \count($payload); $i++) // loop over payload
+
+    //     $json->setVariable('extra', ['eg' => 'this']);
+    //     $json->setVariable('payload', $payload);
+    // }
+
+    /**
+     * Modify the resultset
+     * 
+     * @param mixed $data 
+     * @return void 
+     */
+    // public function getListPost($data): void {
+    //     $data->buffer();
+    //     foreach($data as $d) // loop over results
+    // }
+
+    /**
+     * Check data before creating record
+     * 
+     * @param mixed $data 
+     * @return null|string error message
+     */
+    // public function createPre(&$data): ?string {
+    //     // check data
+        // return 'error message';
+    // }
 
     /**
      * Things that should not need to be overwritten.
@@ -143,7 +168,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      *
-     * @var mixed datatable
+     * @var mixed dataTable
      */
     protected $_dataTable = null;
 
@@ -194,10 +219,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @param string $method
      * @param array $arguments
-     * @return void
+     * 
+     * @return null|string
      */
-    protected function callCustomProcess(string $method, array $arguments): void {
-        if (method_exists($this, $method)) $this->{$method}(...$arguments);
+    protected function callCustomProcess(string $method, array $arguments): ?string {
+        if (method_exists($this, $method)) return $this->{$method}(...$arguments);
+        return null;
     }
 
     /**
@@ -210,7 +237,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @param string $extra_message
      *          - message to join to code->message
      * @param array $extra
-     *          - extra metainfo to return to client
+     *          - extra metaInfo to return to client
      *
      * @return \Laminas\View\Model\JsonModel
      */
@@ -412,7 +439,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
         $this->setFieldValue($data, 'fk_users', $userSession);
 
-        $response = $this->preCreate($data);
+        $response = $this->callCustomProcess($action.'Pre', ['data' => $data]);
+
         if (!is_null($response)) return $this->createResponse($data, Code::USER_TASK_ABORT(), Code::TASK_API_CREATE()->getDescription(), ['abort message' => $response]);
 
         $e->populate($data, false);
@@ -502,7 +530,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             $options['pages'] = (int) ceil($options['items'] / $options['pagesize']);
         }
 
-        // $this->postGetList();
         $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
 
         $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));

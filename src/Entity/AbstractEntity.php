@@ -30,18 +30,18 @@ use function ucwords;
  * @version 1.0.0
  */
 class AbstractEntity extends AbstractRowGateway {
-    // /**
-    //  * Convert a column name to a user friendly method name.
-    //  *
-    //  * @param string $property generated method target
-    //  * @param string $prepend getter or setter
-    //  * 
-    //  * @return string method name
-    //  */
-    // protected function parseMethodName(string $property, string $prepend = 'get'): string {
-    //     // return $prepend . str_replace(' ', '', ucwords(str_replace('_', ' ', $property)));
-    //     return $prepend . str_replace(['_', ' '], [' ', ''], ucwords($property));
-    // }
+    /**
+     * Convert a column name to a user friendly method name.
+     *
+     * @param string $property generated method target
+     * @param string $prepend getter or setter
+     * 
+     * @return string method name
+     */
+    protected function parseMethodName(string $property, string $prepend = 'get'): string {
+        // return $prepend . str_replace(' ', '', ucwords(str_replace('_', ' ', $property)));
+        return $prepend . str_replace(['_', ' '], [' ', ''], ucwords($property));
+    }
 
     // /**
     //  * magic method: __sleep
