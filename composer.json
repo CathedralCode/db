@@ -8,7 +8,7 @@
         "laminas",
 		"db"
 	],
-	"homepage": "https://git.inane.co.za:3000/Cathedral/db",
+	"homepage": "https://git.inane.co.za:3000/cathedral/db",
     "license": "MIT",
     "repositories": [
         {
@@ -27,8 +27,8 @@
 	],
 	"support": {
 		"email": "peep@inane.co.za",
-		"wiki": "https://git.inane.co.za:3000/Cathedral/db/wiki",
-		"issues": "https://git.inane.co.za:3000/Cathedral/db/issues"
+		"wiki": "https://git.inane.co.za:3000/cathedral/db/wiki",
+		"issues": "https://git.inane.co.za:3000/cathedral/db/issues"
 	},
 	"require": {
 		"php": ">=8.0",
