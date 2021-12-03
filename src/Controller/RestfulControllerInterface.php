@@ -1,7 +1,7 @@
 <?php
 /**
  * Restful Controller Interface
- * 
+ *
  * PHP version 7
  *
  * @package Cathedral\Db
@@ -13,9 +13,9 @@ namespace Cathedral\Db\Controller;
 
 /**
  * Restful Controller Interface
- * 
+ *
+ * @version 0.2.0
  * @package Cathedral\Db
- * @version 0.1.0
  */
 interface RestfulControllerInterface {
     /**

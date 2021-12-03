@@ -1,24 +1,32 @@
 <?php
 /**
  * Db\Model
- * 
- * PHP version 7
+ *
+ * PHP version 8
  */
+
 declare(strict_types=1);
 
 namespace Cathedral\Db\Model;
 
-use Laminas\Db\TableGateway\Feature\EventFeatureEventsInterface;
-use Laminas\EventManager\EventManagerAwareInterface;
 use Laminas\Db\TableGateway\AbstractTableGateway as LaminasAbstractTableGateway;
-use Laminas\Db\TableGateway\Feature\EventFeature\TableGatewayEvent;
-use Laminas\EventManager\EventManager;
-use Laminas\EventManager\EventManagerInterface;
-use Laminas\EventManager\SharedEventManager;
+
+use Laminas\Db\TableGateway\Feature\{
+    EventFeature\TableGatewayEvent,
+    EventFeatureEventsInterface
+};
+use Laminas\EventManager\{
+    EventManager,
+    EventManagerAwareInterface,
+    EventManagerInterface,
+    SharedEventManager
+};
 
 /**
  * AbstractModel
+ *
  * @version 1.0.0
+ * @package Cathedral\Db
  */
 class AbstractModel extends LaminasAbstractTableGateway implements EventManagerAwareInterface, EventFeatureEventsInterface {
 
@@ -28,8 +36,7 @@ class AbstractModel extends LaminasAbstractTableGateway implements EventManagerA
      * @param \Laminas\EventManager\EventManagerInterface $eventManager
      * @return DrawsTable
      */
-    public function setEventManager(\Laminas\EventManager\EventManagerInterface $eventManager)
-    {
+    public function setEventManager(\Laminas\EventManager\EventManagerInterface $eventManager) {
         $eventManager->addIdentifiers([
             self::class,
             array_pop(explode('\\', self::class)),
@@ -47,10 +54,8 @@ class AbstractModel extends LaminasAbstractTableGateway implements EventManagerA
      *
      * @return \Laminas\EventManager\EventManagerInterface
      */
-    public function getEventManager()
-    {
+    public function getEventManager() {
         if (!$this->eventManager instanceof EventManagerInterface) $this->setEventManager(new EventManager(new SharedEventManager()));
         return $this->eventManager;
     }
-
 }
