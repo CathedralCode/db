@@ -51,10 +51,12 @@ class Code extends Enum {
 	const TASK_API_UPDATE = '606';
 	const TASK_API_PATCH = '607';
 
+    const USER_TASK_ABORT = '701';
+
 	/**
 	 * @var string[] the descriptions
 	 */
-	protected static $descriptions = [
+	protected static array $descriptions = [
 		'100' => 'Success',
 		'200' => 'Unknown error',
 		'210' => 'Identity required to access data',
@@ -69,5 +71,6 @@ class Code extends Enum {
 		'605' => 'Task API ReplaceList',
 		'606' => 'Task API Update',
 		'607' => 'Task API Patch',
+		'701' => 'User Task Abort',
 	];
 }

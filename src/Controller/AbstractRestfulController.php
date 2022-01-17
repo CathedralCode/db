@@ -1,19 +1,19 @@
 <?php
+
 /**
  * Restful Abstract
- * 
+ *
  * PHP version 7
  *
  * @package Cathedral\Db
  * @author Philip Michael Raab <philip@inane.co.za>
  */
+
 declare(strict_types=1);
 
 namespace Cathedral\Db\Controller;
 
 use Cathedral\Db\Enum\Code;
-use Inane\Config\ConfigAwareInterface;
-use Inane\Config\ConfigAwareTrait;
 use Laminas\Db\TableGateway\Feature\GlobalAdapterFeature;
 use Laminas\Json\Json;
 use Laminas\Log\Writer\Db;
@@ -34,15 +34,28 @@ use function get_class;
 use function getenv;
 use function in_array;
 use function is_array;
+use function is_null;
+use function is_string;
+use function method_exists;
 use function property_exists;
 use function str_replace;
 use function strtolower;
 use function ucfirst;
 
+use Inane\Config\{
+    ConfigAwareInterface,
+    ConfigAwareTrait
+};
+
 /**
  * Restful Abstract
  *
- * @version 0.2.0
+ * @version 0.5.0
+ *
+ * @method void customQueryOptions(&$options, $params)
+ * @method void customResponseOptions(&$json)
+ * @method void getListPost($data)
+ * @method void createPre(&$data)
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
@@ -53,42 +66,16 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     use \Inane\Option\LogTrait;
 
     /**
-     *
-     * @var mixed table class
+     * Things to overwritten in table class to customize behaviour.
      */
-    protected $_class = null;
-
-    /**
-     *
-     * @var mixed datatable
-     */
-    protected $_datatable = null;
-
-    /**
-     *
-     * @var int log priority
-     */
-    // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
-    protected $_defaultLogPriority = \Laminas\Log\Logger::DEBUG;
-
-    /**
-     * @var mixed the logger
-     */
-    protected $_logger = null;
-
-    /**
-     * @var mixed the database logger
-     */
-    protected $_loggerDb = null;
-
-    /**
-     *
-     * @var string table name
-     */
-    protected $_table = '';
 
     /**
      * Special fields for processing
+     *
+     * Only JSON & NUMBER fields need be listing here
+     *
+     * 'id' => self::CONTENT_TYPE_NUMBER,
+     * 'extra' => self::CONTENT_TYPE_JSON,
      *
      * @var array field => type
      */
@@ -96,6 +83,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Auth Actions
+     *
+     * To change authentication requirements
+     *  - true => auth required
+     *  - false => guest access
      *
      * @var array action => auth
      */
@@ -110,6 +101,99 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     ];
 
     /**
+     * Methods to adjust values
+     * Add them to your tables rest controller to pre & post tweak data
+     */
+
+    // /**
+    //  * Gets the query string parameters for pagination
+    //  *
+    //  * @param array $options
+    //  * @param array $params
+    //  *
+    //  * @return void
+    //  */
+    // public function customQueryOptions(&$options, $params): void {
+    //     if (isset($params['query_key'])) $options['where']['field'] = intval($params['query_key']);
+    // }
+
+    // /**
+    //  * Gets the query string parameters for pagination
+    //  *
+    //  * @param mixed $json
+    //  * @return void
+    //  */
+    // public function customResponseOptions(&$json): void {
+    //     /** @var JsonModel $json */
+    //     $payload = $json->getVariable('payload');
+
+    //     for ($i = 0; $i < \count($payload); $i++) // loop over payload
+
+    //     $json->setVariable('extra', ['eg' => 'this']);
+    //     $json->setVariable('payload', $payload);
+    // }
+
+    // /**
+    //  * Modify the resultset
+    //  *
+    //  * @param mixed $data
+    //  * @return void
+    //  */
+    // public function getListPost($data): void {
+    //     $data->buffer();
+    //     foreach($data as $d) // loop over results
+    // }
+
+    // /**
+    //  * Check data before creating record
+    //  *
+    //  * @param mixed $data
+    //  * @return null|string error message
+    //  */
+    // public function createPre(&$data): ?string {
+    //     // check data
+        // return 'error message';
+    // }
+
+    /**
+     * Things that should not need to be overwritten.
+     */
+
+    /**
+     * @var string table name
+     */
+    protected $_table = '';
+
+    /**
+     *
+     * @var mixed table class
+     */
+    protected $_class = null;
+
+    /**
+     *
+     * @var mixed dataTable
+     */
+    protected $_dataTable = null;
+
+    /**
+     *
+     * @var int log priority
+     */
+    protected $_defaultLogPriority = \Laminas\Log\Logger::DEBUG;
+    // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
+
+    /**
+     * @var mixed the logger
+     */
+    protected $_logger = null;
+
+    /**
+     * @var mixed the database logger
+     */
+    protected $_loggerDb = null;
+
+    /**
      * True for collections
      *
      * @var bool isCollection
@@ -120,12 +204,31 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Returns the values passed to the function
-     * 
-     * @param mixed $params 
-     * @return array 
+     *
+     * @param mixed $params
+     * @return array
      */
     protected function bundleArguments($params) {
         return count($params) == 1 ? array_combine([(is_array($params[0]) ? 'data' : 'id')], $params) : array_combine(['id', 'data'], $params);
+    }
+
+    /**
+     * Checks and runs methods that modify the data
+     *
+     * Used in:
+     * createResponse
+     * getList
+     *
+     * @since 0.5.0
+     *
+     * @param string $method
+     * @param array $arguments
+     *
+     * @return null|string
+     */
+    protected function callCustomProcess(string $method, array $arguments): ?string {
+        if (method_exists($this, $method)) return $this->{$method}(...$arguments);
+        return null;
     }
 
     /**
@@ -138,7 +241,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @param string $extra_message
      *          - message to join to code->message
      * @param array $extra
-     *          - extra metainfo to return to client
+     *          - extra metaInfo to return to client
      *
      * @return \Laminas\View\Model\JsonModel
      */
@@ -154,7 +257,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'pagination' => false,
         ];
 
-        $options = \Inane\Util\ArrayUtil::merge($extra, $defaults);
+        $options = \Inane\Util\ArrayUtil::complete($extra, $defaults);
 
         $json = new JsonModel();
         $json->setVariable('payload', $payload);
@@ -173,6 +276,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'code' => $code->getValue(),
             'message' => $code->getDescription() . $extra_message
         ]);
+
+        $this->callCustomProcess('customResponseOptions', ['json' => $json]);
 
         return $json;
     }
@@ -197,10 +302,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Loops through resultset passing each result to get processed
      *
-     * @param mixed $data
+     * @param array $data array of elements
      * @return array
      */
-    public function processElements($results): array {
+    public function processElementList($results): array {
         $resultsArray = [];
         if (count($this->_processFields) > 0) {
             foreach ($results as $result) $resultsArray[] = $this->processElement($result);
@@ -211,9 +316,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Checks if auth needed
-     * 
-     * @param string $function 
-     * @return bool 
+     *
+     * @param string $function
+     * @return bool
      */
     protected function validateAccess(string $function): bool {
         $defaults = [
@@ -234,13 +339,15 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     }
 
     /**
+     * Set Value for property
+     *
      * Checks that the field is valid for the object before setting the value
      *
-     * @param array $data
-     * @param string $field
-     * @param [type] $value
-     * 
-     * @return bool
+     * @param array $data array with all valid fields
+     * @param string $field field to update
+     * @param mixed $value new value
+     *
+     * @return bool true if field found and updated
      */
     protected function setFieldValue(array &$data, string $field, $value): bool {
         if (property_exists(get_class($this->getEntity()), $field)) if (!array_key_exists($field, $data)) {
@@ -249,15 +356,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         }
 
         return false;
-    }
-
-    /**
-     * Gets the query string parameters for pagination
-     * 
-     * @param array $options
-     * @return void
-     */
-    public function customQueryOptions(&$options, $params): void {
     }
 
     /**
@@ -276,7 +374,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         foreach ($params as $key => $value) if (in_array($key, $columns)) $options['where'][$key] = $value;
 
-        if ($params['page']) {
+        if (array_key_exists('page', $params)) {
             $options['page'] = (int) $params['page'];
             if ($options['page'] < 1) $options['page'] = 1;
 
@@ -284,16 +382,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             else $options['pagesize'] = (int) getenv('REST_PAGESIZE') ?: $this::PAGINATION_PAGESIZE;
         }
 
-        if ($params['ids']) $options['where']['id'] = explode(',', $params['ids']);
+        if (array_key_exists('page', $params)) $options['where']['id'] = explode(',', $params['ids']);
 
-        if ($params['state'] !== null) $options['state'][] = (int) $params['state'];
+        if (array_key_exists('state', $params) && $params['state'] !== null) $options['state'][] = (int) $params['state'];
 
-        $this->customQueryOptions($options, $params);
+        $this->callCustomProcess('customQueryOptions', ['options' => $options, 'params' => $params]);
         return $options;
-    }
-
-    protected function preCreate(array &$data): array {
-        return $data;
     }
 
     /**
@@ -317,6 +411,19 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     }
 
     /**
+     * Validate type of id field
+     *
+     * Check if id is numeric and converts it if necessary.
+     *
+     * @param $id
+     *
+     * @return array
+     */
+    protected function validateIdType(mixed $id): mixed {
+        return $id = is_numeric($id) ? (int) $id : $id;
+    }
+
+    /**
      * Create a new resource
      *
      * @param mixed $data
@@ -328,7 +435,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_CREATE()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
         /* @var $e \DBLayer\Entity\User */
@@ -336,27 +442,15 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
         $this->setFieldValue($data, 'fk_users', $userSession);
-        // $this->setFieldValue($data, 'id', null);
 
-        // $data['id'] = null;
-        $this->preCreate($data);
+        $response = $this->callCustomProcess($action.'Pre', ['data' => $data]);
+
+        if (!is_null($response)) return $this->createResponse($data, Code::USER_TASK_ABORT(), Code::TASK_API_CREATE()->getDescription(), ['abort message' => $response]);
+
         $e->populate($data, false);
-
         $e->save();
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-            // 'options' => json_encode(['data' => $data]),
-        ];
-
-        $this->logDb()->info('route:', $extra);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -370,27 +464,14 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $action = 'delete';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_DELETE()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
+        $id = $this->validateIdType($id);
 
         $e = $this->getEntity();
         if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_DELETE()->getDescription());
 
         $e->delete();
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-            // 'options' => json_encode(['id' => $id]),
-        ];
-
-        $this->logDb()->info('route:', $extra);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse([], Code::SUCCESS());
     }
 
@@ -404,11 +485,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $action = 'get';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_GET()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
-
         $e = $this->getEntity();
-        $id = is_numeric($id) ? (int) $id : $id;
+        $id = $this->validateIdType($id);
 
         try {
             if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_GET()->getDescription());
@@ -416,19 +494,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), array_shift(explode(',', array_pop(explode(':', $th->getMessage())))));
         }
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-            // 'options' => json_encode(['id' => $id]),
-        ];
-
-        $this->logDb()->info('route:', $extra);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -440,9 +506,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     public function getList() {
         $action = 'getList';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_GETLIST()->getDescription());
-
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
         $this->_isCollection = true;
         $dt = $this->getDataTable();
@@ -471,21 +534,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             $options['pages'] = (int) ceil($options['items'] / $options['pagesize']);
         }
 
-        // $this->postGetList();
+        $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($where),
-        ];
-
-        $this->logDb()->info('route:', $extra);
-        return $this->createResponse($this->processElements($resultList), Code::SUCCESS(), null, ['options' => $where]);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
+        return $this->createResponse($this->processElementList($resultList), Code::SUCCESS(), null, ['options' => $where]);
     }
 
     /**
@@ -500,9 +552,6 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $action = 'replaceList';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_REPLACELIST()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
-
         $this->_isCollection = true;
         $e = $this->getEntity();
 
@@ -510,18 +559,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->exchangeArray($data);
         $e->save();
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-            // 'options' => json_encode(['data' => $data]),
-        ];
-        $this->logDb()->info('route:', $extra);
+
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($data, Code::SUCCESS());
     }
 
@@ -533,13 +572,11 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return mixed
      */
     public function update($id, $data) {
-        // \Inane\Debug\Logger::dump($this->getDataTable()->isSequence, 'this->getDataTable()->isSequence', true);
         $action = 'update';
         $this->log()->debug($action, []);
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_UPDATE()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
+        $id = $this->validateIdType($id);
 
         $e = $this->getEntity();
         // if (!$e->get($id)) {
@@ -556,18 +593,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_UPDATE()->getDescription() . "\n" . $th->getMessage());
         }
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            // 'options' => json_encode(['id' => $id, 'data' => $data]),
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-        ];
-        $this->logDb()->info('route:', $extra);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -587,32 +613,23 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $action = 'patch';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_PATCH()->getDescription());
 
-        $userId = $this->identity() ? $this->identity()->getId() : 0;
-        $userSession = $this->identity() ? $this->identity()->getSession() : '';
+        $id = $this->validateIdType($id);
 
         $e = $this->getEntity();
         if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_PATCH()->getDescription());
 
         $this->setFieldValue($data, 'modified', date('Y-m-d H:i:s'));
         array_walk($data, function ($item, $key, &$entity) {
+            if (array_key_exists($key, $this->_processFields) && $this->_processFields[$key] == self::CONTENT_TYPE_JSON && is_string($item)) {
+                if ($item == '') $item = null;
+                else $item = JSON::decode($item);
+            }
             $entity->$key = $item;
         }, $e);
 
         $e->save();
 
-        $extra = [
-            'ip_address' => $this->getIp(),
-            'user_id' => $userId,
-            'route' => 'api/' . $this->_table . '/' . $action,
-            'file' => 'dblayer/' . $this->_table . '/' . $action,
-            'class' => $this->getClass(),
-            'function' => $action,
-            'session' => $userSession,
-            'options' => JSON::encode($this->bundleArguments(func_get_args())),
-            // 'options' => json_encode(['id' => $id, 'data' => $data]),
-        ];
-
-        $this->logDb()->info('route:', $extra);
+        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -641,12 +658,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return mixed
      */
     protected function getDataTable() {
-        if (!$this->_datatable) {
+        if (!$this->_dataTable) {
             $class = $this->getClass();
-            $this->_datatable = new $class();
+            $this->_dataTable = new $class();
         }
 
-        return $this->_datatable;
+        return $this->_dataTable;
     }
 
     /**
@@ -667,6 +684,23 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         if (!$this->_table) $this->_table = strtolower(str_replace('Controller', '', array_pop(explode('\\', $this::whoAmI()))));
 
         return $this->_table;
+    }
+
+    protected function getLogData(string $action, ?array $data = []): array {
+        $userId = $this->identity() ? $this->identity()->getId() : 0;
+        $userSession = $this->identity() ? $this->identity()->getSession() : '';
+
+        $logData = [
+            'ip_address' => $this->getIp(),
+            'user_id' => $userId,
+            'route' => $this->_table . ' => ' . $action,
+            'function' => $this->_table . ' => ' . $action,
+            // 'line' => '',
+            'class' => $this->getClass(),
+            'session' => $userSession,
+        ];
+
+        return array_merge($logData, $data);
     }
 
     /**
