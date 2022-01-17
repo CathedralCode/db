@@ -83,7 +83,13 @@ class AbstractEntity extends AbstractRowGateway {
     public function __set($property, $value) {
         if (!in_array($property, array_keys($this->data))) throw new Exception("Invalid Property:\n\t" . $this::class . " has no property: {$property}");
         $method = $this->parseMethodName($property, 'set');
-        $this->$method($value);
+        try {
+            $this->$method($value);
+        } catch (\Throwable $th) {
+            if ($th instanceof \TypeError) $this->$method((int)$value);
+            else throw $th;
+        }
+
     }
 
     // /**

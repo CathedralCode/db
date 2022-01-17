@@ -2,7 +2,7 @@
 
 /**
  * Restful Abstract
- * 
+ *
  * PHP version 7
  *
  * @package Cathedral\Db
@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace Cathedral\Db\Controller;
 
 use Cathedral\Db\Enum\Code;
-use Inane\Config\ConfigAwareInterface;
-use Inane\Config\ConfigAwareTrait;
 use Laminas\Db\TableGateway\Feature\GlobalAdapterFeature;
 use Laminas\Json\Json;
 use Laminas\Log\Writer\Db;
@@ -44,11 +42,16 @@ use function str_replace;
 use function strtolower;
 use function ucfirst;
 
+use Inane\Config\{
+    ConfigAwareInterface,
+    ConfigAwareTrait
+};
+
 /**
  * Restful Abstract
- * 
+ *
  * @version 0.5.0
- * 
+ *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
  * @method void getListPost($data)
@@ -68,9 +71,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Special fields for processing
-     * 
+     *
      * Only JSON & NUMBER fields need be listing here
-     * 
+     *
      * 'id' => self::CONTENT_TYPE_NUMBER,
      * 'extra' => self::CONTENT_TYPE_JSON,
      *
@@ -80,7 +83,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Auth Actions
-     * 
+     *
      * To change authentication requirements
      *  - true => auth required
      *  - false => guest access
@@ -102,24 +105,24 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Add them to your tables rest controller to pre & post tweak data
      */
 
-    /**
-     * Gets the query string parameters for pagination
-     * 
-     * @param array $options 
-     * @param array $params 
-     * 
-     * @return void 
-     */
+    // /**
+    //  * Gets the query string parameters for pagination
+    //  *
+    //  * @param array $options
+    //  * @param array $params
+    //  *
+    //  * @return void
+    //  */
     // public function customQueryOptions(&$options, $params): void {
     //     if (isset($params['query_key'])) $options['where']['field'] = intval($params['query_key']);
     // }
 
-    /**
-     * Gets the query string parameters for pagination
-     * 
-     * @param mixed $json 
-     * @return void 
-     */
+    // /**
+    //  * Gets the query string parameters for pagination
+    //  *
+    //  * @param mixed $json
+    //  * @return void
+    //  */
     // public function customResponseOptions(&$json): void {
     //     /** @var JsonModel $json */
     //     $payload = $json->getVariable('payload');
@@ -130,23 +133,23 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     //     $json->setVariable('payload', $payload);
     // }
 
-    /**
-     * Modify the resultset
-     * 
-     * @param mixed $data 
-     * @return void 
-     */
+    // /**
+    //  * Modify the resultset
+    //  *
+    //  * @param mixed $data
+    //  * @return void
+    //  */
     // public function getListPost($data): void {
     //     $data->buffer();
     //     foreach($data as $d) // loop over results
     // }
 
-    /**
-     * Check data before creating record
-     * 
-     * @param mixed $data 
-     * @return null|string error message
-     */
+    // /**
+    //  * Check data before creating record
+    //  *
+    //  * @param mixed $data
+    //  * @return null|string error message
+    //  */
     // public function createPre(&$data): ?string {
     //     // check data
         // return 'error message';
@@ -177,8 +180,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var int log priority
      */
-    // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
     protected $_defaultLogPriority = \Laminas\Log\Logger::DEBUG;
+    // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
 
     /**
      * @var mixed the logger
@@ -201,9 +204,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Returns the values passed to the function
-     * 
-     * @param mixed $params 
-     * @return array 
+     *
+     * @param mixed $params
+     * @return array
      */
     protected function bundleArguments($params) {
         return count($params) == 1 ? array_combine([(is_array($params[0]) ? 'data' : 'id')], $params) : array_combine(['id', 'data'], $params);
@@ -211,16 +214,16 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Checks and runs methods that modify the data
-     * 
+     *
      * Used in:
      * createResponse
      * getList
-     * 
+     *
      * @since 0.5.0
      *
      * @param string $method
      * @param array $arguments
-     * 
+     *
      * @return null|string
      */
     protected function callCustomProcess(string $method, array $arguments): ?string {
@@ -254,7 +257,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'pagination' => false,
         ];
 
-        $options = \Inane\Util\ArrayUtil::merge($extra, $defaults);
+        $options = \Inane\Util\ArrayUtil::complete($extra, $defaults);
 
         $json = new JsonModel();
         $json->setVariable('payload', $payload);
@@ -313,9 +316,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Checks if auth needed
-     * 
-     * @param string $function 
-     * @return bool 
+     *
+     * @param string $function
+     * @return bool
      */
     protected function validateAccess(string $function): bool {
         $defaults = [
@@ -337,13 +340,13 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Set Value for property
-     * 
+     *
      * Checks that the field is valid for the object before setting the value
      *
      * @param array $data array with all valid fields
      * @param string $field field to update
      * @param mixed $value new value
-     * 
+     *
      * @return bool true if field found and updated
      */
     protected function setFieldValue(array &$data, string $field, $value): bool {
@@ -409,11 +412,11 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Validate type of id field
-     * 
+     *
      * Check if id is numeric and converts it if necessary.
      *
      * @param $id
-     * 
+     *
      * @return array
      */
     protected function validateIdType(mixed $id): mixed {
