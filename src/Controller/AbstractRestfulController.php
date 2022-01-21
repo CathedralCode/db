@@ -3,7 +3,7 @@
 /**
  * Restful Abstract
  *
- * PHP version 7
+ * PHP version 8
  *
  * @package Cathedral\Db
  * @author Philip Michael Raab <philip@inane.co.za>
@@ -14,11 +14,13 @@ declare(strict_types=1);
 namespace Cathedral\Db\Controller;
 
 use Cathedral\Db\Enum\Code;
+use DBLayer\Entity\User;
+use Inane\Util\ArrayUtil;
 use Laminas\Db\TableGateway\Feature\GlobalAdapterFeature;
 use Laminas\Json\Json;
-use Laminas\Log\Writer\Db;
 use Laminas\Mvc\Controller\AbstractRestfulController as LaminasAbstractRestfulController;
 use Laminas\View\Model\JsonModel;
+use Throwable;
 
 use function array_key_exists;
 use function array_merge;
@@ -46,6 +48,15 @@ use Inane\Config\{
     ConfigAwareInterface,
     ConfigAwareTrait
 };
+use Inane\Option\{
+    IpTrait,
+    LogTrait
+};
+use Laminas\Log\{
+    Writer\Db,
+    Writer\Stream,
+    Logger
+};
 
 /**
  * Restful Abstract
@@ -62,8 +73,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     RestfulControllerInterface {
 
     use ConfigAwareTrait;
-    use \Inane\Option\IpTrait;
-    use \Inane\Option\LogTrait;
+    use IpTrait;
+    use LogTrait;
 
     /**
      * Things to overwritten in table class to customize behaviour.
@@ -79,7 +90,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var array field => type
      */
-    protected $_processFields = [];
+    protected array $_processFields = [];
 
     /**
      * Auth Actions
@@ -90,7 +101,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var array action => auth
      */
-    protected $actionsAuth = [
+    protected array $actionsAuth = [
         'get' => false,
         'getList' => false,
         'create' => true,
@@ -162,45 +173,48 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * @var string table name
      */
-    protected $_table = '';
+    protected string $_table = '';
 
     /**
      *
      * @var mixed table class
      */
-    protected $_class = null;
+    protected ?string $_class = null;
 
     /**
      *
      * @var mixed dataTable
      */
-    protected $_dataTable = null;
+    protected ?\Cathedral\Db\Model\AbstractModel $_dataTable = null;
 
     /**
      *
      * @var int log priority
      */
-    protected $_defaultLogPriority = \Laminas\Log\Logger::DEBUG;
+    protected int $_defaultLogPriority = Logger::DEBUG;
     // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
 
     /**
      * @var mixed the logger
      */
-    protected $_logger = null;
+    protected ?\Laminas\Log\Logger $_logger = null;
 
     /**
      * @var mixed the database logger
      */
-    protected $_loggerDb = null;
+    protected ?\Laminas\Log\Logger $_loggerDb = null;
 
     /**
      * True for collections
      *
      * @var bool isCollection
      */
-    protected $_isCollection = false;
+    protected bool $_isCollection = false;
 
-    protected $postGetList = [];
+    /**
+     * @var array
+     */
+    protected array $postGetList = [];
 
     /**
      * Returns the values passed to the function
@@ -243,7 +257,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @param array $extra
      *          - extra metaInfo to return to client
      *
-     * @return \Laminas\View\Model\JsonModel
+     * @return JsonModel
      */
     protected function createResponse($payload = null, Code $code = Code::SUCCESS, string $extra_message = null, $extra = []): JsonModel {
         if (!is_array($payload)) $payload = [
@@ -257,7 +271,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'pagination' => false,
         ];
 
-        $options = \Inane\Util\ArrayUtil::complete($extra, $defaults);
+        $options = ArrayUtil::complete($extra, $defaults);
 
         $json = new JsonModel();
         $json->setVariable('payload', $payload);
@@ -331,7 +345,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             'delete' => true,
         ];
 
-        \Inane\Util\ArrayUtil::merge($this->actionsAuth, $defaults);
+        // ArrayUtil::merge($this->actionsAuth, $defaults);
+        ArrayUtil::complete($this->actionsAuth, $defaults);
 
         if (array_key_exists($function, $this->actionsAuth)) return $this->actionsAuth[$function];
 
@@ -399,7 +414,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      */
     protected function updateWhere($entity, array &$where = []): array {
         if (property_exists(get_class($entity), 'fk_users')) {
-            /* @var $identity \DBLayer\Entity\User */
+            /* @var $identity User */
             $identity = $this->identity();
 
             // $where = array_merge([
@@ -437,7 +452,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
 
-        /* @var $e \DBLayer\Entity\User */
+        /* @var $e User */
         $e = $this->getEntity();
 
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
@@ -490,7 +505,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         try {
             if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_GET()->getDescription());
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return $this->createResponse($id, Code::RECORD_INVALID(), array_shift(explode(',', array_pop(explode(':', $th->getMessage())))));
         }
 
@@ -589,7 +604,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         try {
             $e->save();
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_UPDATE()->getDescription() . "\n" . $th->getMessage());
         }
 
@@ -607,9 +622,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *          $id
      * @param
      *          $data
-     * @return array
+     * @return JsonModel|array
      */
-    public function patch($id, $data) {
+    public function patch($id, $data): JsonModel|array
+    {
         $action = 'patch';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_PATCH()->getDescription());
 
@@ -655,7 +671,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Creates and returns a DataTable or null if invalid
      *
-     * @return mixed
+     * @return \Cathedral\Db\Model\AbstractModel
      */
     protected function getDataTable() {
         if (!$this->_dataTable) {
@@ -706,14 +722,14 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Return Logger
      *
-     * @return \Laminas\Log\Logger
+     * @return Logger
      */
-    protected function log(): \Laminas\Log\Logger {
+    protected function log(): Logger {
         if ($this->_logger == null) {
             // $priority = getenv('LOG_LEVEL') ?: $this->_defaultLogPriority;
             $priority = $this->_defaultLogPriority;
-            $logger = new \Laminas\Log\Logger();
-            $writer = new \Laminas\Log\Writer\Stream('log/data.' . $this->_table . '.log');
+            $logger = new Logger();
+            $writer = new Stream('log/data.' . $this->_table . '.log');
             // $writer->addFilter(new \Laminas\Log\Filter\Priority($this->_defaultLogPriority));
             // $writer->addFilter(new \Laminas\Log\Filter\Priority($priority));
             $logger->addWriter($writer);
@@ -728,11 +744,11 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Return Logger
      *
-     * @return \Laminas\Log\Logger
+     * @return Logger
      */
-    protected function logDb(): \Laminas\Log\Logger {
+    protected function logDb(): Logger {
         if ($this->_loggerDb == null) {
-            $logger = new \Laminas\Log\Logger();
+            $logger = new Logger();
             $dbWriter = new Db(GlobalAdapterFeature::getStaticAdapter(), 'logs');
             $dbWriter->setFormatter(new \Laminas\Log\Formatter\Db('Y-m-d H:i:s'));
             $logger->addWriter($dbWriter);
