@@ -14,10 +14,8 @@ declare(strict_types=1);
 namespace Cathedral\Db\Controller;
 
 use Cathedral\Db\Enum\Code;
-use Cathedral\Db\Model\AbstractModel;
 use DBLayer\Entity\User;
 use Inane\Util\ArrayUtil;
-use Laminas\Db\TableGateway\Feature\GlobalAdapterFeature;
 use Laminas\Json\Json;
 use Laminas\Mvc\Controller\AbstractRestfulController as LaminasAbstractRestfulController;
 use Laminas\View\Model\JsonModel;
@@ -53,6 +51,10 @@ use Inane\Option\{
     IpTrait,
     LogTrait
 };
+use Laminas\Db\TableGateway\{
+    Feature\GlobalAdapterFeature,
+    AbstractTableGateway
+};
 use Laminas\Log\{
     Writer\Db,
     Writer\Stream,
@@ -62,7 +64,7 @@ use Laminas\Log\{
 /**
  * Restful Abstract
  *
- * @version 0.5.1
+ * @version 0.5.2
  *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
@@ -186,7 +188,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var mixed dataTable
      */
-    protected ?AbstractModel $_dataTable = null;
+    protected ?AbstractTableGateway $_dataTable = null;
 
     /**
      *
