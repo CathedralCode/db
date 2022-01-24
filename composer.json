@@ -10,13 +10,17 @@
 	],
 	"homepage": "https://git.inane.co.za:3000/cathedral/db",
     "license": "MIT",
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://packer.inane.co.za",
-            "name": "Inane Packer"
-        }
-    ],
+    "_comment": [
+		{
+			"repositories": [
+				{
+					"type": "composer",
+					"url": "https://packer.inane.co.za",
+					"name": "Inane Packer"
+				}
+			]
+		}
+	],
 	"authors": [
 		{
 			"name": "Philip Michael Raab",
@@ -35,7 +39,7 @@
 		"laminas/laminas-paginator": "*",
 		"laminas/laminas-db": "*",
         "laminas/laminas-hydrator": "*",
-        "inanepain/inane": "*"
+        "inanepain/inane": ">=0.26.0"
 	},
 	"autoload": {
 		"psr-4": {

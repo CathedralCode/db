@@ -6,7 +6,7 @@
  * PHP version 8
  *
  * @package Cathedral\Db
- * @author Philip Michael Raab <philip@inane.co.za>
+ * @author  Philip Michael Raab <philip@inane.co.za>
  */
 
 declare(strict_types=1);
@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Cathedral\Db\Controller;
 
 use Cathedral\Db\Enum\Code;
+use Cathedral\Db\Model\AbstractModel;
 use DBLayer\Entity\User;
 use Inane\Util\ArrayUtil;
 use Laminas\Db\TableGateway\Feature\GlobalAdapterFeature;
@@ -61,7 +62,7 @@ use Laminas\Log\{
 /**
  * Restful Abstract
  *
- * @version 0.5.0
+ * @version 0.5.1
  *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
@@ -163,7 +164,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     //  */
     // public function createPre(&$data): ?string {
     //     // check data
-        // return 'error message';
+    // return 'error message';
     // }
 
     /**
@@ -185,7 +186,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @var mixed dataTable
      */
-    protected ?\Cathedral\Db\Model\AbstractModel $_dataTable = null;
+    protected ?AbstractModel $_dataTable = null;
 
     /**
      *
@@ -197,12 +198,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * @var mixed the logger
      */
-    protected ?\Laminas\Log\Logger $_logger = null;
+    protected ?Logger $_logger = null;
 
     /**
      * @var mixed the database logger
      */
-    protected ?\Laminas\Log\Logger $_loggerDb = null;
+    protected ?Logger $_loggerDb = null;
 
     /**
      * True for collections
@@ -220,6 +221,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Returns the values passed to the function
      *
      * @param mixed $params
+     *
      * @return array
      */
     protected function bundleArguments($params) {
@@ -233,12 +235,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * createResponse
      * getList
      *
-     * @since 0.5.0
-     *
      * @param string $method
-     * @param array $arguments
+     * @param array  $arguments
      *
      * @return null|string
+     * @since 0.5.0
+     *
      */
     protected function callCustomProcess(string $method, array $arguments): ?string {
         if (method_exists($this, $method)) return $this->{$method}(...$arguments);
@@ -250,18 +252,18 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @param string|array $payload
      *          - data returned by query
-     * @param Code $code
+     * @param Code         $code
      *          - response code
-     * @param string $extra_message
+     * @param string       $extra_message
      *          - message to join to code->message
-     * @param array $extra
+     * @param array        $extra
      *          - extra metaInfo to return to client
      *
      * @return JsonModel
      */
     protected function createResponse($payload = null, Code $code = Code::SUCCESS, string $extra_message = null, $extra = []): JsonModel {
         if (!is_array($payload)) $payload = [
-            $payload
+            $payload,
         ];
 
         if ($extra_message != null && $extra_message != '') $extra_message = " - $extra_message";
@@ -288,7 +290,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         if ($code != Code::SUCCESS()) $json->setVariable('error', [
             'code' => $code->getValue(),
-            'message' => $code->getDescription() . $extra_message
+            'message' => $code->getDescription() . $extra_message,
         ]);
 
         $this->callCustomProcess('customResponseOptions', ['json' => $json]);
@@ -300,6 +302,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Check for fields in the element that need special precessing
      *
      * @param mixed $data
+     *
      * @return array
      */
     public function processElement($result): array {
@@ -307,7 +310,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         foreach ($this->_processFields as $field => $type) if (array_key_exists($field, $resultArray)) {
             if ($type == self::CONTENT_TYPE_JSON && $resultArray[$field] !== null && !is_array($resultArray[$field])) $resultArray[$field] = $this->jsonDecode($resultArray[$field]);
-            elseif ($type == self::CONTENT_TYPE_NUMBER) $resultArray[$field] = (int) $resultArray[$field];
+            elseif ($type == self::CONTENT_TYPE_NUMBER) $resultArray[$field] = (int)$resultArray[$field];
         }
 
         return $resultArray;
@@ -317,6 +320,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Loops through resultset passing each result to get processed
      *
      * @param array $data array of elements
+     *
      * @return array
      */
     public function processElementList($results): array {
@@ -332,6 +336,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Checks if auth needed
      *
      * @param string $function
+     *
      * @return bool
      */
     protected function validateAccess(string $function): bool {
@@ -358,9 +363,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * Checks that the field is valid for the object before setting the value
      *
-     * @param array $data array with all valid fields
+     * @param array  $data  array with all valid fields
      * @param string $field field to update
-     * @param mixed $value new value
+     * @param mixed  $value new value
      *
      * @return bool true if field found and updated
      */
@@ -390,16 +395,17 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         foreach ($params as $key => $value) if (in_array($key, $columns)) $options['where'][$key] = $value;
 
         if (array_key_exists('page', $params)) {
-            $options['page'] = (int) $params['page'];
+            $options['page'] = (int)$params['page'];
             if ($options['page'] < 1) $options['page'] = 1;
 
-            if ($params['pagesize']) $options['pagesize'] = (int) $params['pagesize'];
-            else $options['pagesize'] = (int) getenv('REST_PAGESIZE') ?: $this::PAGINATION_PAGESIZE;
+            if ($params['pagesize']) $options['pagesize'] = (int)$params['pagesize'];
+            else $options['pagesize'] = (int)getenv('REST_PAGESIZE') ?: $this::PAGINATION_PAGESIZE;
         }
 
-        if (array_key_exists('page', $params)) $options['where']['id'] = explode(',', $params['ids']);
+        // option => ids: used to send a comma separated list of id values to retrieve
+        if (array_key_exists('ids', $params)) $options['where']['id'] = explode(',', $params['ids']);
 
-        if (array_key_exists('state', $params) && $params['state'] !== null) $options['state'][] = (int) $params['state'];
+        if (array_key_exists('state', $params) && $params['state'] !== null) $options['state'][] = (int)$params['state'];
 
         $this->callCustomProcess('customQueryOptions', ['options' => $options, 'params' => $params]);
         return $options;
@@ -408,8 +414,9 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Limit to user data
      *
-     * @param $entity
+     * @param       $entity
      * @param array $where
+     *
      * @return array
      */
     protected function updateWhere($entity, array &$where = []): array {
@@ -435,13 +442,14 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return array
      */
     protected function validateIdType(mixed $id): mixed {
-        return $id = is_numeric($id) ? (int) $id : $id;
+        return $id = is_numeric($id) ? (int)$id : $id;
     }
 
     /**
      * Create a new resource
      *
      * @param mixed $data
+     *
      * @return mixed
      */
     public function create($data) {
@@ -458,7 +466,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
         $this->setFieldValue($data, 'fk_users', $userSession);
 
-        $response = $this->callCustomProcess($action.'Pre', ['data' => $data]);
+        $response = $this->callCustomProcess($action . 'Pre', ['data' => $data]);
 
         if (!is_null($response)) return $this->createResponse($data, Code::USER_TASK_ABORT(), Code::TASK_API_CREATE()->getDescription(), ['abort message' => $response]);
 
@@ -473,6 +481,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Delete an existing resource
      *
      * @param mixed $id
+     *
      * @return mixed
      */
     public function delete($id) {
@@ -494,6 +503,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * Return single resource
      *
      * @param mixed $id
+     *
      * @return mixed
      */
     public function get($id) {
@@ -532,7 +542,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         if (property_exists(get_class($dt->getEntity()), 'state')) {
             $where = array_merge([
-                'state' => $options['state']
+                'state' => $options['state'],
             ], $where);
         }
         unset($options['where']);
@@ -546,7 +556,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             $resultList->setItemCountPerPage($options['pagesize']);
 
             $options['items'] = $resultList->getTotalItemCount();
-            $options['pages'] = (int) ceil($options['items'] / $options['pagesize']);
+            $options['pages'] = (int)ceil($options['items'] / $options['pagesize']);
         }
 
         $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
@@ -561,6 +571,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @param mixed $data
      *          replacement data
+     *
      * @see \Laminas\Mvc\Controller\AbstractRestfulController::replaceList()
      */
     public function replaceList($data) {
@@ -584,6 +595,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *
      * @param mixed $id
      * @param mixed $data
+     *
      * @return mixed
      */
     public function update($id, $data) {
@@ -622,10 +634,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      *          $id
      * @param
      *          $data
+     *
      * @return JsonModel|array
      */
-    public function patch($id, $data): JsonModel|array
-    {
+    public function patch($id, $data): JsonModel|array {
         $action = 'patch';
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_PATCH()->getDescription());
 

@@ -5,7 +5,7 @@
  * PHP version 8
  *
  * @package Cathedral\Db
- * @author Philip Michael Raab <philip@inane.co.za>
+ * @author  Philip Michael Raab <philip@inane.co.za>
  */
 declare(strict_types=1);
 
