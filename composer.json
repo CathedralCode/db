@@ -39,7 +39,7 @@
 		"laminas/laminas-paginator": "*",
 		"laminas/laminas-db": "*",
         "laminas/laminas-hydrator": "*",
-        "inanepain/inane": ">=0.26.0"
+        "inanepain/inane": "*"
 	},
 	"autoload": {
 		"psr-4": {
