@@ -68,3 +68,7 @@ enum ValueType: string {
 // \n
 // INFO;
 // }
+
+// $b = [];
+// $b['vt'] = ValueType::FLOAT;
+// echo $b['vt']->type() . PHP_EOL;
