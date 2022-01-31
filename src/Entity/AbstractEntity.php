@@ -91,18 +91,18 @@ class AbstractEntity extends AbstractRowGateway {
         }
     }
 
-    // /**
-    //  * Array copy of object
-    //  *
-    //  * @param ?object $object
-    //  * @param bool $ignorePrimaryColumn
-    //  *
-    //  * @return Array
-    //  */
-    // public function getArrayCopy(?object $object = null, bool $ignorePrimaryColumn = false): array {
-    //     $data = array_merge([], $this->data);
+    /**
+     * Array copy of object
+     *
+     * @param ?object $object
+     * @param bool $ignorePrimaryColumn
+     *
+     * @return Array
+     */
+    public function getArrayCopy(?object $object = null, bool $ignorePrimaryColumn = false): array {
+        $data = array_merge([], $this->data);
 
-    //     if ($ignorePrimaryColumn) foreach ($this->primaryKeyColumn as $column) unset($data[$column]);
-    //     return $data;
-    // }
+        if ($ignorePrimaryColumn) foreach ($this->primaryKeyColumn as $column) unset($data[$column]);
+        return $data;
+    }
 }

@@ -37,6 +37,7 @@ use function in_array;
 use function is_array;
 use function is_null;
 use function is_string;
+use function json_encode;
 use function method_exists;
 use function property_exists;
 use function str_replace;
@@ -64,7 +65,15 @@ use Laminas\Log\{
 /**
  * Restful Abstract
  *
- * @version 0.5.2
+ * @version 0.6.0
+ *
+ * @package Cathedral\Db
+ *
+ * - create → POST /collection
+ * - read → GET /collection[/id]
+ * - update → PUT /collection/id
+ * - patch → PATCH /collection/id
+ * - delete → DELETE /collection/id
  *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
@@ -176,19 +185,17 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * @var string table name
      */
-    protected string $_table = '';
+    protected string $_table;
 
     /**
-     *
-     * @var mixed table class
+     * @var string table class
      */
-    protected ?string $_class = null;
+    protected string $_class;
 
     /**
-     *
-     * @var mixed dataTable
+     * @var \Laminas\Db\TableGateway\AbstractTableGateway dataTable
      */
-    protected ?AbstractTableGateway $_dataTable = null;
+    protected AbstractTableGateway $_dataTable;
 
     /**
      *
@@ -198,14 +205,14 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     // protected $_defaultLogPriority = \Laminas\Log\Logger::ERR;
 
     /**
-     * @var mixed the logger
+     * @var \Laminas\Log\Logger the logger
      */
-    protected ?Logger $_logger = null;
+    protected Logger $_logger;
 
     /**
-     * @var mixed the database logger
+     * @var \Laminas\Log\Logger the database logger
      */
-    protected ?Logger $_loggerDb = null;
+    protected Logger $_loggerDb;
 
     /**
      * True for collections
@@ -282,7 +289,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $json->setVariable('success', $code == Code::SUCCESS());
 
         $json->setVariable('info', [
-            'service' => $this->_table,
+            'service' => $this->getTable(),
             'result' => $this->_isCollection ? 'collection' : 'entity',
             'count' => $code == Code::SUCCESS() ? ($this->_isCollection ? count($payload) : 1) : 0,
         ]);
@@ -332,6 +339,24 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $resultsArray;
         }
         return $results->toArray();
+    }
+
+    /**
+     * Convert json fields back to string before saving to db
+     *
+     * @since 0.6.0
+     *
+     * @param array $data
+     *
+     * @return array
+     */
+    protected function jsonEncodeColumns(array $data): array {
+        foreach ($this->_processFields as $field => $type) if ($type == self::CONTENT_TYPE_JSON) {
+            if (array_key_exists($field, $data) && !is_string($data[$field])) {
+                $data[$field] = json_encode($data[$field], JSON_NUMERIC_CHECK);
+            }
+        }
+        return $data;
     }
 
     /**
@@ -450,6 +475,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Create a new resource
      *
+     * POST /collection
+     *
      * @param mixed $data
      *
      * @return mixed
@@ -482,6 +509,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Delete an existing resource
      *
+     * DELETE /collection/id
+     *
      * @param mixed $id
      *
      * @return mixed
@@ -503,6 +532,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Return single resource
+     *
+     * GET /collection/id
      *
      * @param mixed $id
      *
@@ -527,6 +558,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Return list of resources
+     *
+     * GET /collection
      *
      * @return mixed
      */
@@ -595,6 +628,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Update an existing resource
      *
+     * PUT /collection/id
+     *
      * @param mixed $id
      * @param mixed $data
      *
@@ -613,6 +648,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         // }
 
         $this->setFieldValue($data, 'modified', date('Y-m-d H:i:s'));
+        $data = $this->jsonEncodeColumns($data);
+
         $e->exchangeArray($data);
         $this->log()->debug('update-exchange', $data);
 
@@ -628,6 +665,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
     /**
      * Respond to the PATCH method
+     *
+     * PATCH /collection/id
      *
      * Not marked as abstract, as that would introduce a BC break
      * (introduced in 2.1.0); instead, raises an exception if not implemented.
@@ -649,13 +688,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         if (!$e->get($id)) return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_PATCH()->getDescription());
 
         $this->setFieldValue($data, 'modified', date('Y-m-d H:i:s'));
-        array_walk($data, function ($item, $key, &$entity) {
-            if (array_key_exists($key, $this->_processFields) && $this->_processFields[$key] == self::CONTENT_TYPE_JSON && is_string($item)) {
-                if ($item == '') $item = null;
-                else $item = JSON::decode($item);
-            }
-            $entity->$key = $item;
-        }, $e);
+        $data = $this->jsonEncodeColumns($data);
+
+        $current = $e->getArrayCopy();
+        foreach($data as $key => $value) if (array_key_exists($key, $current)) $e->{$key} = $value;
 
         $e->save();
 
@@ -663,7 +699,12 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
-    public static function whoAmI() {
+    /**
+     * Get this class
+     *
+     * @return string
+     */
+    public static function whoAmI(): string {
         return get_called_class();
     }
 
@@ -673,7 +714,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return mixed
      */
     protected function getClass() {
-        if (!$this->_class) {
+        if (!isset($this->_class)) {
             $moduleName = explode('\\', $this::class)[0];
             $table = ucfirst($this->getTable());
             $this->_class = '\\' . $moduleName . "\Model\\{$table}" . 'Table';
@@ -688,7 +729,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return \Cathedral\Db\Model\AbstractModel
      */
     protected function getDataTable() {
-        if (!$this->_dataTable) {
+        if (!isset($this->_dataTable)) {
             $class = $this->getClass();
             $this->_dataTable = new $class();
         }
@@ -699,23 +740,36 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Creates and returns an Entity or null if invalid
      *
-     * @return mixed
+     * @return Cathedral\Db\Entity\AbstractEntity
      */
-    protected function getEntity() {
+    protected function getEntity(): \Cathedral\Db\Entity\AbstractEntity {
         return $this->getDataTable()->getEntity();
     }
 
     /**
      * Creates and returns a DataTable or null if invalid
      *
-     * @return mixed
+     * @return string
      */
-    protected function getTable() {
-        if (!$this->_table) $this->_table = strtolower(str_replace('Controller', '', array_pop(explode('\\', $this::whoAmI()))));
+    protected function getTable(): string {
+        if (!isset($this->_table)) {
+            $table = explode('\\', $this::whoAmI());
+            $table = array_pop($table);
+            $table = str_replace('Controller', '', $table);
+            $this->_table = strtolower($table);
+        }
 
         return $this->_table;
     }
 
+    /**
+     * Creates an info array for logging
+     *
+     * @param string $action
+     * @param array|null $data
+     *
+     * @return array
+     */
     protected function getLogData(string $action, ?array $data = []): array {
         $userId = $this->identity() ? $this->identity()->getId() : 0;
         $userSession = $this->identity() ? $this->identity()->getSession() : '';
@@ -723,8 +777,8 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $logData = [
             'ip_address' => $this->getIp(),
             'user_id' => $userId,
-            'route' => $this->_table . ' => ' . $action,
-            'function' => $this->_table . ' => ' . $action,
+            'route' => $this->getTable() . ' => ' . $action,
+            'function' => $this->getTable() . ' => ' . $action,
             // 'line' => '',
             'class' => $this->getClass(),
             'session' => $userSession,
@@ -739,11 +793,11 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return Logger
      */
     protected function log(): Logger {
-        if ($this->_logger == null) {
+        if (!isset($this->_logger)) {
             // $priority = getenv('LOG_LEVEL') ?: $this->_defaultLogPriority;
             $priority = $this->_defaultLogPriority;
             $logger = new Logger();
-            $writer = new Stream('log/data.' . $this->_table . '.log');
+            $writer = new Stream('log/data.' . $this->getTable() . '.log');
             // $writer->addFilter(new \Laminas\Log\Filter\Priority($this->_defaultLogPriority));
             // $writer->addFilter(new \Laminas\Log\Filter\Priority($priority));
             $logger->addWriter($writer);
@@ -761,7 +815,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return Logger
      */
     protected function logDb(): Logger {
-        if ($this->_loggerDb == null) {
+        if (!isset($this->_loggerDb)) {
             $logger = new Logger();
             $dbWriter = new Db(GlobalAdapterFeature::getStaticAdapter(), 'logs');
             $dbWriter->setFormatter(new \Laminas\Log\Formatter\Db('Y-m-d H:i:s'));

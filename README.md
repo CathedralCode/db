@@ -70,3 +70,8 @@ public function createPre(&$data): ?string {
     return null;
 }
     ```
+
+## Auth configurations
+
+...
+
