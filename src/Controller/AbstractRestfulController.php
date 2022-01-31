@@ -637,7 +637,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      */
     public function update($id, $data) {
         $action = 'update';
-        $this->log()->debug($action, []);
+        // $this->log()->debug($action, []);
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_UPDATE()->getDescription());
 
         $id = $this->validateIdType($id);
@@ -651,7 +651,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $data = $this->jsonEncodeColumns($data);
 
         $e->exchangeArray($data);
-        $this->log()->debug('update-exchange', $data);
+        // $this->log()->debug('update-exchange', $data);
 
         try {
             $e->save();
