@@ -29,6 +29,15 @@ use Laminas\EventManager\{
  * @package Cathedral\Db
  */
 class AbstractModel extends LaminasAbstractTableGateway implements EventManagerAwareInterface, EventFeatureEventsInterface {
+    /**
+     * @var TableGatewayEvent Event
+     */
+    protected $event = null;
+
+    /**
+     * @var EventManagerInterface EventManager
+     */
+    protected $eventManager = null;
 
     /**
      * Set the event manager instance used by this context
