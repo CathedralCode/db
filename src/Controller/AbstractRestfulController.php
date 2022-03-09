@@ -1,12 +1,20 @@
 <?php
 
 /**
- * Restful Abstract
+ * This file is part of the Cathedral package.
  *
- * PHP version 8
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
+ * PHP Version 8
+ *
+ * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
- * @author  Philip Michael Raab <philip@inane.co.za>
+ *
+ * @license MIT
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ *
+ * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
  */
 
 declare(strict_types=1);
@@ -65,20 +73,26 @@ use Laminas\Log\{
 /**
  * Restful Abstract
  *
- * @version 0.6.0
- *
- * @package Cathedral\Db
- *
  * - create → POST /collection
  * - read → GET /collection[/id]
  * - update → PUT /collection/id
  * - patch → PATCH /collection/id
  * - delete → DELETE /collection/id
  *
+ * @todo OPTIMISE: This needs to fully checked and tested. Old or redundant code removed.
+ * @todo handling of header: `Cathedral-Options` to customise request.
+ * @todo DOC: Usage, especially of hooks and other such features.
+ * @todo Have only one method of enhancement, trash the other (if it still exists).
+ * @todo COMPLETE: Customisation method or what not.
+ *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
  * @method void getListPost($data)
  * @method void createPre(&$data)
+ *
+ * @version 0.6.0
+ *
+ * @package Cathedral\Db
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
