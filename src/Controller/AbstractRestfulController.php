@@ -497,7 +497,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      */
     public function create($data) {
         $action = 'create';
-        $this->log()->debug($action, []);
+        // $this->log()->debug($action, []);
 
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_CREATE()->getDescription());
 
@@ -516,7 +516,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $e->populate($data, false);
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -540,7 +540,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->delete();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse([], Code::SUCCESS());
     }
 
@@ -566,7 +566,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), array_shift(explode(',', array_pop(explode(':', $th->getMessage())))));
         }
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -610,7 +610,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
         return $this->createResponse($this->processElementList($resultList), Code::SUCCESS(), null, ['options' => $where]);
     }
 
@@ -635,7 +635,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $e->exchangeArray($data);
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($data, Code::SUCCESS());
     }
 
@@ -673,7 +673,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_UPDATE()->getDescription() . "\n" . $th->getMessage());
         }
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -709,7 +709,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
