@@ -27,7 +27,7 @@ use function ucwords;
 /**
  * AbstractEntity
  *
- * @version 1.0.1
+ * @version 1.1.0
  * @package Cathedral\Db
  */
 class AbstractEntity extends AbstractRowGateway {
@@ -101,8 +101,11 @@ class AbstractEntity extends AbstractRowGateway {
      */
     public function getArrayCopy(?object $object = null, bool $ignorePrimaryColumn = false): array {
         $data = array_merge([], $this->data);
+        $columns = $this->getDataTable()->getColumns();
 
         if ($ignorePrimaryColumn) foreach ($this->primaryKeyColumn as $column) unset($data[$column]);
+        foreach ($data as $key => $value) if (!in_array($key, $columns)) unset($data[$key]);
+
         return $data;
     }
 }
