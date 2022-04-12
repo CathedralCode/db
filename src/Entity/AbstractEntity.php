@@ -18,6 +18,8 @@ namespace Cathedral\Db\Entity;
 use Exception;
 use Laminas\Db\RowGateway\AbstractRowGateway;
 
+use function array_flip;
+use function array_intersect_key;
 use function array_keys;
 use function array_merge;
 use function in_array;
@@ -30,7 +32,7 @@ use function ucwords;
  * @version 1.1.0
  * @package Cathedral\Db
  */
-class AbstractEntity extends AbstractRowGateway {
+abstract class AbstractEntity extends AbstractRowGateway {
     /**
      * Convert a column name to a user friendly method name.
      *
@@ -40,7 +42,6 @@ class AbstractEntity extends AbstractRowGateway {
      * @return string method name
      */
     protected function parseMethodName(string $property, string $prepend = 'get'): string {
-        // return $prepend . str_replace(' ', '', ucwords(str_replace('_', ' ', $property)));
         return $prepend . str_replace(['_', ' '], [' ', ''], ucwords($property));
     }
 
@@ -101,11 +102,8 @@ class AbstractEntity extends AbstractRowGateway {
      */
     public function getArrayCopy(?object $object = null, bool $ignorePrimaryColumn = false): array {
         $data = array_merge([], $this->data);
-        $columns = $this->getDataTable()->getColumns();
-
         if ($ignorePrimaryColumn) foreach ($this->primaryKeyColumn as $column) unset($data[$column]);
-        foreach ($data as $key => $value) if (!in_array($key, $columns)) unset($data[$key]);
 
-        return $data;
+        return array_intersect_key($data, array_flip($this->getDataTable()->getColumns()));
     }
 }
