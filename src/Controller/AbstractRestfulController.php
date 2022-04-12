@@ -1,12 +1,20 @@
 <?php
 
 /**
- * Restful Abstract
+ * This file is part of the Cathedral package.
  *
- * PHP version 8
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
+ * PHP Version 8
+ *
+ * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
- * @author  Philip Michael Raab <philip@inane.co.za>
+ *
+ * @license MIT
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ *
+ * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
  */
 
 declare(strict_types=1);
@@ -65,20 +73,26 @@ use Laminas\Log\{
 /**
  * Restful Abstract
  *
- * @version 0.6.0
- *
- * @package Cathedral\Db
- *
  * - create → POST /collection
  * - read → GET /collection[/id]
  * - update → PUT /collection/id
  * - patch → PATCH /collection/id
  * - delete → DELETE /collection/id
  *
+ * @todo OPTIMISE: This needs to fully checked and tested. Old or redundant code removed.
+ * @todo handling of header: `Cathedral-Options` to customise request.
+ * @todo DOC: Usage, especially of hooks and other such features.
+ * @todo Have only one method of enhancement, trash the other (if it still exists).
+ * @todo COMPLETE: Customisation method or what not.
+ *
  * @method void customQueryOptions(&$options, $params)
  * @method void customResponseOptions(&$json)
  * @method void getListPost($data)
  * @method void createPre(&$data)
+ *
+ * @version 0.6.1
+ *
+ * @package Cathedral\Db
  */
 abstract class AbstractRestfulController extends LaminasAbstractRestfulController implements
     ConfigAwareInterface,
@@ -91,6 +105,13 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
     /**
      * Things to overwritten in table class to customize behaviour.
      */
+
+    /**
+     * Restrict non admin profiles to their own data
+     *
+     * @var string field
+     */
+    protected string $restrictions;
 
     /**
      * Special fields for processing
@@ -447,15 +468,10 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      * @return array
      */
     protected function updateWhere($entity, array &$where = []): array {
-        if (property_exists(get_class($entity), 'fk_users')) {
-            /* @var $identity User */
-            $identity = $this->identity();
+        if (isset($this->restrictions) && $this->identity())
+            if (array_key_exists($this->restrictions, $entity->toArray()))
+                $where[$this->restrictions] = $this->identity()->id;
 
-            // $where = array_merge([
-            //  'fk_users' => [$identity->getId()]
-            // ], $where);
-            $where['fk_users'] = $identity->getId();
-        }
         return $where;
     }
 
@@ -483,7 +499,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
      */
     public function create($data) {
         $action = 'create';
-        $this->log()->debug($action, []);
+        // $this->log()->debug($action, []);
 
         if ($this->validateAccess($action) && $this->identity() === null) return $this->createResponse([], Code::ERROR_IDENTITY(), Code::TASK_API_CREATE()->getDescription());
 
@@ -493,7 +509,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $e = $this->getEntity();
 
         $this->setFieldValue($data, 'created', date('Y-m-d H:i:s'));
-        $this->setFieldValue($data, 'fk_users', $userSession);
+        if (isset($this->restrictions)) $this->setFieldValue($data, $this->restrictions, $userSession);
 
         $response = $this->callCustomProcess($action . 'Pre', ['data' => $data]);
 
@@ -502,7 +518,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $e->populate($data, false);
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -526,7 +542,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->delete();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse([], Code::SUCCESS());
     }
 
@@ -552,7 +568,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), array_shift(explode(',', array_pop(explode(':', $th->getMessage())))));
         }
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -596,7 +612,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $this->callCustomProcess("{$action}Post", ['data' => $resultList]);
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($where)]));
         return $this->createResponse($this->processElementList($resultList), Code::SUCCESS(), null, ['options' => $where]);
     }
 
@@ -621,7 +637,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
         $e->exchangeArray($data);
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($data, Code::SUCCESS());
     }
 
@@ -659,7 +675,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
             return $this->createResponse($id, Code::RECORD_INVALID(), Code::TASK_API_UPDATE()->getDescription() . "\n" . $th->getMessage());
         }
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
@@ -695,7 +711,7 @@ abstract class AbstractRestfulController extends LaminasAbstractRestfulControlle
 
         $e->save();
 
-        $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
+        // $this->logDb()->info('route:', $this->getLogData($action, ['options' => JSON::encode($this->bundleArguments(func_get_args()))]));
         return $this->createResponse($this->processElement($e), Code::SUCCESS());
     }
 
