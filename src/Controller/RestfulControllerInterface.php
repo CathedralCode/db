@@ -1,12 +1,25 @@
 <?php
+
 /**
- * Restful Controller Interface
+ * This file is part of the Cathedral package.
  *
- * PHP version 8
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  *
+ * PHP version 8.1
+ *
+ * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
- * @author  Philip Michael Raab <philip@inane.co.za>
+ *
+ * @license MIT
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ *
+ * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
+ *
+ * @version $Id$
+ * $Date$
  */
+
 declare(strict_types=1);
 
 namespace Cathedral\Db\Controller;
@@ -34,3 +47,4 @@ interface RestfulControllerInterface {
      */
     const CONTENT_TYPE_FLOAT = 'float';
 }
+

@@ -1,5 +1,7 @@
 # Cathedral\Db
 
+> $Id$ ($Date$)
+
 Database class for use with builder and its generated code.
 
 ## Custom methods
@@ -22,11 +24,11 @@ There are a few custom methods you can create to easily modify your data before 
 ```php
 /**
  * Gets the query string parameters for pagination
- * 
- * @param array $options 
- * @param array $params 
- * 
- * @return void 
+ *
+ * @param array $options
+ * @param array $params
+ *
+ * @return void
  */
 public function customQueryOptions(&$options, $params): void {
     if (isset($params['fk_champions'])) $options['where']['fk_champions'] = intval($params['fk_champions']);
@@ -34,9 +36,9 @@ public function customQueryOptions(&$options, $params): void {
 
 /**
  * Gets the query string parameters for pagination
- * 
- * @param mixed $json 
- * @return void 
+ *
+ * @param mixed $json
+ * @return void
  */
 public function customResponseOptions(&$json): void {
     /** @var JsonModel $json */
@@ -50,9 +52,9 @@ public function customResponseOptions(&$json): void {
 
 /**
  * Modify the resultset
- * 
- * @param mixed $data 
- * @return void 
+ *
+ * @param mixed $data
+ * @return void
  */
 public function getListPost($data): void {
     $data->buffer();
@@ -61,9 +63,9 @@ public function getListPost($data): void {
 
 /**
  * Check data before creating record
- * 
- * @param mixed $data 
- * @return null|string error 
+ *
+ * @param mixed $data
+ * @return null|string error
  */
 public function createPre(&$data): ?string {
     // check data

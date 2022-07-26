@@ -1,10 +1,25 @@
 <?php
+
 /**
- * DBLayer Response Codes Enum
+ * This file is part of the Cathedral package.
  *
- * @package DBLayer
- * @author philip<philipr@digitalcabinet.co.za>
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * PHP version 8.1
+ *
+ * @author Philip Michael Raab <peep@inane.co.za>
+ * @package Cathedral\Db
+ *
+ * @license MIT
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ *
+ * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
+ *
+ * @version $Id$
+ * $Date$
  */
+
 declare(strict_types=1);
 
 namespace Cathedral\Db\Enum;
@@ -51,7 +66,7 @@ class Code extends Enum {
 	const TASK_API_UPDATE = '606';
 	const TASK_API_PATCH = '607';
 
-    const USER_TASK_ABORT = '701';
+	const USER_TASK_ABORT = '701';
 
 	/**
 	 * @var string[] the descriptions
@@ -74,3 +89,4 @@ class Code extends Enum {
 		'701' => 'User Task Abort',
 	];
 }
+
