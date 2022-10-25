@@ -11,13 +11,13 @@
  * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
  *
- * @license MIT
- * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ * @license UNLICENSE
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/UNLICENSE UNLICENSE
  *
  * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
  *
- * @version $Id$
- * $Date$
+ * @version $Id: 0.2.1-4-g4197440$
+ * $Date: Tue Jul 26 22:32:33 2022 +0200$
  */
 
 declare(strict_types=1);
@@ -84,4 +84,3 @@ enum ValueType: string {
 // $b = [];
 // $b['vt'] = ValueType::FLOAT;
 // echo $b['vt']->type() . PHP_EOL;
-

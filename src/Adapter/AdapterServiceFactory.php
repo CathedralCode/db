@@ -11,13 +11,13 @@
  * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
  *
- * @license MIT
- * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ * @license UNLICENSE
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/UNLICENSE UNLICENSE
  *
  * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
  *
- * @version $Id$
- * $Date$
+ * @version $Id: 0.2.1-4-g4197440$
+ * $Date: Tue Jul 26 22:32:33 2022 +0200$
  */
 
 declare(strict_types=1);
@@ -26,11 +26,12 @@ namespace Cathedral\Db\Adapter;
 
 // use Laminas\Db\Adapter\AdapterServiceFactory as LaminasDbAdapterServiceFactory;
 
+use Laminas\Db\Adapter\AdapterInterface;
 use Psr\Container\ContainerInterface;
 
 use Laminas\ServiceManager\{
-    Factory\FactoryInterface,
-    ServiceLocatorInterface
+	Factory\FactoryInterface,
+	ServiceLocatorInterface
 };
 
 /**
@@ -40,31 +41,34 @@ use Laminas\ServiceManager\{
  *
  * @package DBLayer
  *
- * @version 1.0.0
+ * @version 1.1.0
  */
-// class AdapterServiceFactory extends LaminasDbAdapterServiceFactory {
 class AdapterServiceFactory implements FactoryInterface {
-    /**
-     * Create db adapter service
-     *
-     * @param string $requestedName
-     * @param array $options
-     * @return Adapter
-     */
-    public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null)
-    {
-        $config = $container->get('config');
-        return new Adapter($config['db']);
-    }
+	/**
+	 * Create db adapter service
+	 * 
+	 * @param \Psr\Container\ContainerInterface $container 
+	 * @param string $requestedName 
+	 * @param null|mixed[] $options 
+	 * 
+	 * @return \Cathedral\Db\Adapter\Adapter|\Laminas\Db\Adapter\AdapterInterface 
+	 * 
+	 * @throws \Psr\Container\NotFoundExceptionInterface 
+	 * @throws \Psr\Container\ContainerExceptionInterface 
+	 */
+	public function __invoke(ContainerInterface $container, $requestedName, ?array $options = null): Adapter|AdapterInterface {
+		$config = $container->get('config');
+		return new Adapter($config['db']);
+	}
 
-    /**
-     * Create db adapter service (v2)
-     *
-     * @return Adapter
-     */
-    public function createService(ServiceLocatorInterface $container)
-    {
-        return $this($container, Adapter::class);
-    }
+	/**
+	 * Create db adapter service (v2)
+	 * 
+	 * @param \Laminas\ServiceManager\ServiceLocatorInterface $container 
+	 * 
+	 * @return \Cathedral\Db\Adapter\Adapter|\Laminas\Db\Adapter\AdapterInterface 
+	 */
+	public function createService(ServiceLocatorInterface $container): Adapter|AdapterInterface {
+		return $this($container, Adapter::class);
+	}
 }
-

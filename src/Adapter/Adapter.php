@@ -11,20 +11,20 @@
  * @author Philip Michael Raab <peep@inane.co.za>
  * @package Cathedral\Db
  *
- * @license MIT
- * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/LICENSE MIT License
+ * @license UNLICENSE
+ * @license https://raw.githubusercontent.com/CathedralCode/Builder/develop/UNLICENSE UNLICENSE
  *
  * @copyright 2013-2022 Philip Michael Raab <peep@inane.co.za>
  *
- * @version $Id$
- * $Date$
+ * @version $Id: 0.2.1-4-g4197440$
+ * $Date: Tue Jul 26 22:32:33 2022 +0200$
  */
 
 declare(strict_types=1);
 
 namespace Cathedral\Db\Adapter;
 
-use Laminas\Db\Adapter\Adapter as LaminasDbAdapter;
+use Laminas\Db\Adapter\Adapter as LaminasAdapter;
 
 use function str_starts_with;
 use function strtoupper;
@@ -38,7 +38,7 @@ use function strtoupper;
  *
  * @version 1.0.0
  */
-class Adapter extends LaminasDbAdapter {
+class Adapter extends LaminasAdapter {
     /**
      * execute() is a convenience SELECT query function using QUERY_MODE_EXECUTE
      *
@@ -56,4 +56,3 @@ class Adapter extends LaminasDbAdapter {
         return parent::query($sql, static::QUERY_MODE_EXECUTE);
     }
 }
-
